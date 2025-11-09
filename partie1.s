@@ -1,37 +1,31 @@
-# Partie 1 : La pause
-# Affiche les entiers de 1 a 10, un toutes les 500 ms
-
-.data
-    newline: .asciiz "\n"
-
 .text
 .globl main
 
 main:
-    li t0, 1          # t0 = compteur, commence a 1
-    li t1, 11         # t1 = limite (on va jusqu'ï¿½ 10)
+    li t0, 1                # t0 = compteur, commence à 1
+    li t1, 11               # t1 = limite (on s'arrête à 10)
 
 boucle:
-    bge t0, t1, fin   # si t0 >= 11, on arrï¿½te
+    bge t0, t1, fin         # si t0 >= 11, on arrête
 
-    # Afficher t0
-    mv a0, t0         # a0 = valeur a afficher
-    li a7, 1          # appel systï¿½me "print integer"
+    # Afficher t0 (valeur entière)
+    mv a0, t0
+    li a7, 1                # print integer
     ecall
 
-    # Afficher un retour ï¿½ la ligne
-    la a0, newline
-    li a7, 4          # appel systï¿½me "print string"
+    # Afficher un saut de ligne
+    li a0, 10               # code ASCII de \n
+    li a7, 11               # print character
     ecall
 
     # Attendre 500 ms
-    li a0, 500        # a0 = durï¿½e en ms
-    li a7, 32         # appel systï¿½me "sleep"
+    li a0, 500
+    li a7, 32               # sleep
     ecall
 
-    addi t0, t0, 1    # t0++
+    addi t0, t0, 1          # t0++
     j boucle
 
 fin:
-    li a7, 10         # appel systï¿½me "exit"
+    li a7, 10               # exit
     ecall
