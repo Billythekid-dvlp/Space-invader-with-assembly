@@ -1,4 +1,6 @@
 .data
+    J_old_x: .word 14   # ancienne position X
+    J_old_y: .word 28   # ancienne position Y
     KEYBOARD_CTRL: .word 0xffff0000
     KEYBOARD_DATA: .word 0xffff0004
     KEY_I:   .word 105
@@ -7,6 +9,15 @@
     KEY_ESC: .word 27
     game_running: .word 1
     frame_delay:  .word 100
+    # Données pour les missiles
+    missile_count: .word 0
+    missile_x: .space 20   # 5 missiles max
+    missile_y: .space 20
+    missile_dir: .space 20 # 1=haut, -1=bas
+    
+    # Données pour les envahisseurs  
+    invader_dir: .word 1   # 1=droite, -1=gauche
+    invader_speed: .word 1
 
 .text
 .globl main
@@ -55,19 +66,34 @@ main:
     ecall
 
 boucle_jeu:
-# DEBUG: Afficher position
-    mv a0, s1
-    li a7, 1
-    ecall
-    li a7, 11
-    li a0, '\n'
-    ecall
     lw t0, game_running
     beqz t0, fin_jeu
     
-    jal gerer_clavier
-    jal effacer_ecran
-    jal dessiner_scene_complete
+    # SAUVEGARDER l'ancienne position AVANT de la changer
+    la t1, J_old_x
+    sw s1, 0(t1)
+    la t1, J_old_y  
+    sw s2, 0(t1)
+    
+    jal gerer_clavier    # Met à jour s1 et s2
+    
+    # EFFACER l'ANCIENNE position
+    la t1, J_old_x
+    lw a0, 0(t1)
+    la t1, J_old_y
+    lw a1, 0(t1)
+    li a2, 4
+    li a3, 2
+    li a4, 0x00000000  # Noir
+    jal dessiner_rectangle
+    
+    # DESSINER la NOUVELLE position
+    mv a0, s1   # nouvelle position X
+    mv a1, s2   # nouvelle position Y
+    li a2, 4
+    li a3, 2
+    li a4, 0x0000ff00  # Vert
+    jal dessiner_rectangle
     
     lw a0, frame_delay
     li a7, 32
@@ -80,6 +106,48 @@ fin_jeu:
     ecall
     li a7, 10
     ecall
+    
+    
+gerer_tirs:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+    sw s0, 8(sp)
+    
+    # Vérifier si espace est pressé pour créer un missile
+    # (À implémenter)
+    
+    lw s0, 8(sp)
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    jr ra
+
+M_deplacer:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+    sw s0, 8(sp)
+    
+    # Pour chaque missile: y = y + direction
+    # (À implémenter)
+    
+    lw s0, 8(sp)
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    jr ra
+
+E_deplacer:
+    addi sp, sp, -16
+    sw ra, 12(sp)
+    sw s0, 8(sp)
+    
+    # Déplacer tous les envahisseurs
+    # Si bord atteint: changer direction et descendre
+    # (À implémenter)
+    
+    lw s0, 8(sp)
+    lw ra, 12(sp)
+    addi sp, sp, 16
+    jr ra
+
 
 dessiner_scene_complete:
     addi sp, sp, -16
@@ -165,7 +233,7 @@ gauche:
     j fin_clavier
 
 droite:
-    li t0, 28
+    li t0, 31
     bge s1, t0, fin_clavier
     addi s1, s1, 1
     j fin_clavier
@@ -175,16 +243,7 @@ fin_clavier:
 
 effacer_ecran:
     li t0, 0x10004000
-    
-    # DEBUG: Afficher l'adresse de base
-    mv a0, t0
-    li a7, 34
-    ecall
-    li a7, 11
-    li a0, '\n'
-    ecall
-    
-    li t1, 0x00000000
+    li t1, 0x00FF0000
     li t2, 1024
     li t3, 0
     
@@ -245,7 +304,6 @@ boucle_colonne:
     jal dessiner_pixel
     addi t0, t0, 1
     j boucle_colonne
-
 ligne_suivante:
     addi s5, s5, 1
     j boucle_ligne
