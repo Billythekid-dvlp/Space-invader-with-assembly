@@ -1,64 +1,109 @@
-# Partie 2 : Entr�e synchrone au clavier
-# Affiche la valeur de t0 toutes les 500 ms
-# 'i' ? t0--
-# 'p' ? t0++
-# 'o' ? arr�ter le programme
-# Autres touches ? ignor�es
+# =============================================
+# PARTIE 2 : ENTRÉE SYNCHRONE AU CLAVIER
+# Programme qui affiche la valeur de t0 toutes les 500 ms
+# Contrôles :
+# - Touche 'i' : décrémente t0
+# - Touche 'p' : incrémente t0  
+# - Touche 'o' : arrête le programme
+# - Autres touches : ignorées
+# =============================================
 
 .text
 .globl main
 
 main:
-    li t0, 0                # t0 = valeur � modifier
+    # =============================================
+    # INITIALISATION DE LA VARIABLE PRINCIPALE
+    # t0 = valeur numérique à modifier via le clavier
+    # =============================================
+    li t0, 0                # Initialiser t0 à 0
 
 boucle_principale:
-    # Afficher la valeur de t0
-    mv a0, t0
-    li a7, 1                # print integer
-    ecall
+    # =============================================
+    # AFFICHAGE DE LA VALEUR COURANTE
+    # Affiche la valeur de t0 à chaque itération
+    # =============================================
+    mv a0, t0               # Copier la valeur de t0 dans a0
+    li a7, 1                # Code d'appel système : print integer
+    ecall                   # Afficher la valeur entière
 
+    # =============================================
+    # LECTURE DU REGISTRE DE CONTRÔLE DU CLAVIER (RCR)
+    # Adresse 0xffff0000 - Indique si une touche est disponible
+    # =============================================
+    lw t1, 0xffff0000       # Charger la valeur du registre RCR dans t1
 
-    # Lire le registre RCR (0xffff0000)
-    lw t1, 0xffff0000       # t1 = valeur de RCR
+    # =============================================
+    # VÉRIFICATION SI UNE TOUCHE EST DISPONIBLE
+    # Si RCR == 0, aucune touche n'a été pressée
+    # =============================================
+    beq t1, zero, pause     # Si pas de touche, aller directement à la pause
 
-    # Si RCR == 0, pas de touche appuy�e ? on va � la pause
-    beq t1, zero, pause
+    # =============================================
+    # LECTURE DU REGISTRE DE DONNÉES DU CLAVIER (RDR)
+    # Adresse 0xffff0004 - Contient le code ASCII de la touche
+    # Note : La lecture de RDR remet automatiquement RCR à 0
+    # =============================================
+    lw t2, 0xffff0004       # Charger le code ASCII de la touche dans t2
 
-    # Sinon, une touche a �t� appuy�e ? lire RDR (0xffff0004)
-    lw t2, 0xffff0004       # t2 = code ASCII de la touche (RCR passe automatiquement � 0)
+    # =============================================
+    # TRAITEMENT DE LA TOUCHE 'i' (décrémentation)
+    # Code ASCII : 105
+    # =============================================
+    li t3, 105              # Charger le code ASCII de 'i'
+    beq t2, t3, touche_i    # Si touche == 'i', aller à touche_i
 
-    # Comparer avec 'i' (ASCII = 105)
-    li t3, 105
-    beq t2, t3, touche_i
+    # =============================================
+    # TRAITEMENT DE LA TOUCHE 'p' (incrémentation)
+    # Code ASCII : 112
+    # =============================================
+    li t3, 112              # Charger le code ASCII de 'p'
+    beq t2, t3, touche_p    # Si touche == 'p', aller à touche_p
 
-    # Comparer avec 'p' (ASCII = 112)
-    li t3, 112
-    beq t2, t3, touche_p
+    # =============================================
+    # TRAITEMENT DE LA TOUCHE 'o' (quitter)
+    # Code ASCII : 111
+    # =============================================
+    li t3, 111              # Charger le code ASCII de 'o'
+    beq t2, t3, quitter     # Si touche == 'o', aller à quitter
 
-    # Comparer avec 'o' (ASCII = 111)
-    li t3, 111
-    beq t2, t3, quitter
-
-    # Si ce n�est pas i/p/o ? on ignore la touche et on va � la pause
-    j pause
+    # =============================================
+    # TOUCHE NON RECONNUE - IGNORER
+    # Si ce n'est pas i/p/o, on ignore la touche
+    # =============================================
+    j pause                 # Aller directement à la pause
 
 touche_i:
-    addi t0, t0, -1         # t0--
-    j pause
+    # =============================================
+    # DÉCRÉMENTATION DE t0
+    # =============================================
+    addi t0, t0, -1         # t0 = t0 - 1
+    j pause                 # Aller à la pause
 
 touche_p:
-    addi t0, t0, 1          # t0++
-    j pause
+    # =============================================
+    # INCRÉMENTATION DE t0
+    # =============================================
+    addi t0, t0, 1          # t0 = t0 + 1
+    j pause                 # Aller à la pause
 
 quitter:
-    li a7, 10               # exit
-    ecall
+    # =============================================
+    # ARRÊT PROPRE DU PROGRAMME
+    # =============================================
+    li a7, 10               # Code d'appel système : exit
+    ecall                   # Quitter le programme
 
 pause:
-    # Attendre 500 ms
-    li a0, 500
-    li a7, 32               # sleep
-    ecall
+    # =============================================
+    # PAUSE DE 500 MILLISECONDES
+    # Crée un intervalle entre chaque vérification
+    # =============================================
+    li a0, 500              # Durée de la pause en millisecondes
+    li a7, 32               # Code d'appel système : sleep
+    ecall                   # Exécuter la pause
 
-    # Retourner � la boucle principale
-    j boucle_principale
+    # =============================================
+    # RETOUR À LA BOUCLE PRINCIPALE
+    # =============================================
+    j boucle_principale     # Recommencer la boucle
